@@ -62,7 +62,10 @@
                 let parentName = prompt("Enter your name:");
                 let studentClass = prompt("Enter your child's class:");
                 if (parentName && studentClass) {
-                    set(ref(db, `bookedSlots/${time}`), { name: parentName, class: studentClass });
+                    set(ref(db, `bookedSlots/${time}`), { name: parentName, class: studentClass }).then(() => {
+                        alert("Slot booked successfully!");
+                        generateSlots(); // Refresh the slots after booking
+                    });
                 }
             });
         }
