@@ -4,26 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PTM Scheduler</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        .slot { padding: 10px; margin: 5px; border: 1px solid black; cursor: pointer; display: inline-block; }
-        .booked { background-color: #ffcccc; cursor: not-allowed; }
-    </style>
-</head>
-<body>
-    <h2>Parent-Teacher Meeting Scheduler</h2>
-    <div id="slots"></div>
-    
-    <script>
-        const startTime = 8 * 60;  // 8:00 AM in minutes
-        const endTime = 13 * 60 + 30; // 1:30 PM in minutes
-        const slotDuration = 10; // 10-minute slots
-        const breakTime = 5; // 5-minute breaks
-        let bookedSlots = {};
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyD5eDFi_fuyRKmy9j_rgr5V3gRb2joUUAQ",
+            authDomain: "ptm-schedule.firebaseapp.com",
+            databaseURL: "https://ptm-schedule-default-rtdb.firebaseio.com/",
+            projectId: "ptm-schedule",
+            storageBucket: "ptm-schedule.appspot.com",
+            messagingSenderId: "680458851449",
+            appId: "1:680458851449:web:f45070a7cd371667b270a8",
+            measurementId: "G-3LW8M3L8BW"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const slotsRef = ref(db, "bookedSlots");
+        
+        document.addEventListener("DOMContentLoaded", generateSlots);
 
         function generateSlots() {
             const container = document.getElementById("slots");
             container.innerHTML = "";
+            const startTime = 8 * 60;
+            const endTime = 13 * 60 + 30;
+            const slotDuration = 10;
+            const breakTime = 5;
             
             for (let time = startTime; time < endTime; time += slotDuration + breakTime) {
                 let hour = Math.floor(time / 60);
@@ -33,29 +41,42 @@
                 let slotDiv = document.createElement("div");
                 slotDiv.className = "slot";
                 slotDiv.textContent = slotLabel;
-                slotDiv.onclick = () => bookSlot(slotLabel, slotDiv);
+                slotDiv.onclick = () => bookSlot(slotLabel);
                 
-                if (bookedSlots[slotLabel]) {
-                    slotDiv.classList.add("booked");
-                    slotDiv.textContent = `${slotLabel} - ${bookedSlots[slotLabel]}`;
-                }
+                get(ref(db, `bookedSlots/${slotLabel}`)).then(snapshot => {
+                    if (snapshot.exists()) {
+                        let booking = snapshot.val();
+                        slotDiv.classList.add("booked");
+                        slotDiv.textContent = `${slotLabel} - ${booking.name} (${booking.class})`;
+                        slotDiv.onclick = null;
+                    }
+                });
                 
                 container.appendChild(slotDiv);
             }
         }
 
-        function bookSlot(time, element) {
-            if (bookedSlots[time]) return;
-            let parentName = prompt("Enter your name to book this slot:");
-            if (parentName) {
-                bookedSlots[time] = parentName;
-                element.classList.add("booked");
-                element.textContent = `${time} - ${parentName}`;
-                element.onclick = null;
-            }
+        function bookSlot(time) {
+            get(ref(db, `bookedSlots/${time}`)).then(snapshot => {
+                if (snapshot.exists()) return;
+                let parentName = prompt("Enter your name:");
+                let studentClass = prompt("Enter your child's class:");
+                if (parentName && studentClass) {
+                    set(ref(db, `bookedSlots/${time}`), { name: parentName, class: studentClass });
+                }
+            });
         }
         
-        generateSlots();
+        onValue(slotsRef, generateSlots);
     </script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .slot { padding: 10px; margin: 5px; border: 1px solid black; cursor: pointer; display: inline-block; }
+        .booked { background-color: #ffcccc; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <h2>Parent-Teacher Meeting Scheduler</h2>
+    <div id="slots"></div>
 </body>
 </html>
