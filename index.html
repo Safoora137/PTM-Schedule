@@ -8,6 +8,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
         
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyD5eDFi_fuyRKmy9j_rgr5V3gRb2joUUAQ",
             authDomain: "ptm-schedule.firebaseapp.com",
@@ -19,20 +20,24 @@
             measurementId: "G-3LW8M3L8BW"
         };
         
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const slotsRef = ref(db, "bookedSlots");
-        
+
+        // Generate Slots on Page Load
         document.addEventListener("DOMContentLoaded", generateSlots);
+        onValue(slotsRef, generateSlots); // Live Updates
 
         function generateSlots() {
             const container = document.getElementById("slots");
-            container.innerHTML = "";
-            const startTime = 8 * 60;
-            const endTime = 13 * 60 + 30;
-            const slotDuration = 10;
-            const breakTime = 5;
-            
+            container.innerHTML = ""; // Clear previous slots
+
+            const startTime = 8 * 60; // 8:00 AM
+            const endTime = 13 * 60 + 30; // 1:30 PM
+            const slotDuration = 10; // 10 minutes per slot
+            const breakTime = 5; // 5-minute break after each slot
+
             for (let time = startTime; time < endTime; time += slotDuration + breakTime) {
                 let hour = Math.floor(time / 60);
                 let minutes = time % 60;
@@ -41,8 +46,9 @@
                 let slotDiv = document.createElement("div");
                 slotDiv.className = "slot";
                 slotDiv.textContent = slotLabel;
-                slotDiv.onclick = () => bookSlot(slotLabel);
+                slotDiv.onclick = () => bookSlot(slotLabel, slotDiv);
                 
+                // Check if slot is booked
                 get(ref(db, `bookedSlots/${slotLabel}`)).then(snapshot => {
                     if (snapshot.exists()) {
                         let booking = snapshot.val();
@@ -51,26 +57,27 @@
                         slotDiv.onclick = null;
                     }
                 });
-                
+
                 container.appendChild(slotDiv);
             }
         }
 
-        function bookSlot(time) {
+        function bookSlot(time, slotElement) {
             get(ref(db, `bookedSlots/${time}`)).then(snapshot => {
-                if (snapshot.exists()) return;
+                if (snapshot.exists()) {
+                    alert("This slot is already booked!");
+                    return;
+                }
                 let parentName = prompt("Enter your name:");
                 let studentClass = prompt("Enter your child's class:");
                 if (parentName && studentClass) {
                     set(ref(db, `bookedSlots/${time}`), { name: parentName, class: studentClass }).then(() => {
                         alert("Slot booked successfully!");
-                        generateSlots(); // Refresh the slots after booking
                     });
                 }
             });
         }
         
-        onValue(slotsRef, generateSlots);
     </script>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; }
