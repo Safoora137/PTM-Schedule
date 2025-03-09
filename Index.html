@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PTM Scheduler</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        .slot { background-color: #4CAF50; color: white; padding: 10px; margin: 5px; border-radius: 5px; cursor: pointer; }
+        .booked { background-color: #ccc; cursor: not-allowed; }
+        .break { background-color: #f44336; color: white; padding: 10px; margin: 5px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h2>PTM Scheduler</h2>
+    <div id="schedule"></div>
+    
+    <script>
+        let scheduleDiv = document.getElementById("schedule");
+        let startTime = new Date("2023-01-01T08:00:00");
+        let endTime = new Date("2023-01-01T13:30:00");
+        let timeInterval = 10 * 60 * 1000; // 10 minutes
+        let breakInterval = 5 * 60 * 1000; // 5 minutes
+        let bookedSlots = new Set();
+
+        function generateSchedule() {
+            let currentTime = startTime;
+            while (currentTime < endTime) {
+                let nextTime = new Date(currentTime.getTime() + timeInterval);
+                if (nextTime <= endTime) {
+                    let slot = document.createElement("div");
+                    slot.className = "slot";
+                    slot.innerText = formatTime(currentTime) + " - " + formatTime(nextTime);
+                    slot.onclick = function () { bookSlot(slot); };
+                    scheduleDiv.appendChild(slot);
+                }
+                currentTime = new Date(nextTime.getTime() + breakInterval);
+                if (currentTime < endTime) {
+                    let breakSlot = document.createElement("div");
+                    breakSlot.className = "break";
+                    breakSlot.innerText = "Break";
+                    scheduleDiv.appendChild(breakSlot);
+                }
+            }
+        }
+
+        function bookSlot(slot) {
+            if (!slot.classList.contains("booked")) {
+                bookedSlots.add(slot.innerText);
+                slot.classList.add("booked");
+                slot.innerText += " (Booked)";
+                slot.onclick = null;
+            }
+        }
+
+        function formatTime(date) {
+            let hours = date.getHours();
+            let minutes = date.getMinutes();
+            let ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            return hours + ":" + minutes + " " + ampm;
+        }
+
+        generateSchedule();
+    </script>
+</body>
+</html>
