@@ -6,63 +6,56 @@
     <title>PTM Scheduler</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; }
-        .slot { background-color: #4CAF50; color: white; padding: 10px; margin: 5px; border-radius: 5px; cursor: pointer; }
-        .booked { background-color: #ccc; cursor: not-allowed; }
-        .break { background-color: #f44336; color: white; padding: 10px; margin: 5px; border-radius: 5px; }
+        .slot { padding: 10px; margin: 5px; border: 1px solid black; cursor: pointer; display: inline-block; }
+        .booked { background-color: #ffcccc; cursor: not-allowed; }
     </style>
 </head>
 <body>
-    <h2>PTM Scheduler</h2>
-    <div id="schedule"></div>
+    <h2>Parent-Teacher Meeting Scheduler</h2>
+    <div id="slots"></div>
     
     <script>
-        let scheduleDiv = document.getElementById("schedule");
-        let startTime = new Date("2023-01-01T08:00:00");
-        let endTime = new Date("2023-01-01T13:30:00");
-        let timeInterval = 10 * 60 * 1000; // 10 minutes
-        let breakInterval = 5 * 60 * 1000; // 5 minutes
-        let bookedSlots = new Set();
+        const startTime = 8 * 60;  // 8:00 AM in minutes
+        const endTime = 13 * 60 + 30; // 1:30 PM in minutes
+        const slotDuration = 10; // 10-minute slots
+        const breakTime = 5; // 5-minute breaks
+        let bookedSlots = {};
 
-        function generateSchedule() {
-            let currentTime = startTime;
-            while (currentTime < endTime) {
-                let nextTime = new Date(currentTime.getTime() + timeInterval);
-                if (nextTime <= endTime) {
-                    let slot = document.createElement("div");
-                    slot.className = "slot";
-                    slot.innerText = formatTime(currentTime) + " - " + formatTime(nextTime);
-                    slot.onclick = function () { bookSlot(slot); };
-                    scheduleDiv.appendChild(slot);
+        function generateSlots() {
+            const container = document.getElementById("slots");
+            container.innerHTML = "";
+            
+            for (let time = startTime; time < endTime; time += slotDuration + breakTime) {
+                let hour = Math.floor(time / 60);
+                let minutes = time % 60;
+                let slotLabel = `${hour}:${minutes.toString().padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}`;
+                
+                let slotDiv = document.createElement("div");
+                slotDiv.className = "slot";
+                slotDiv.textContent = slotLabel;
+                slotDiv.onclick = () => bookSlot(slotLabel, slotDiv);
+                
+                if (bookedSlots[slotLabel]) {
+                    slotDiv.classList.add("booked");
+                    slotDiv.textContent = `${slotLabel} - ${bookedSlots[slotLabel]}`;
                 }
-                currentTime = new Date(nextTime.getTime() + breakInterval);
-                if (currentTime < endTime) {
-                    let breakSlot = document.createElement("div");
-                    breakSlot.className = "break";
-                    breakSlot.innerText = "Break";
-                    scheduleDiv.appendChild(breakSlot);
-                }
+                
+                container.appendChild(slotDiv);
             }
         }
 
-        function bookSlot(slot) {
-            if (!slot.classList.contains("booked")) {
-                bookedSlots.add(slot.innerText);
-                slot.classList.add("booked");
-                slot.innerText += " (Booked)";
-                slot.onclick = null;
+        function bookSlot(time, element) {
+            if (bookedSlots[time]) return;
+            let parentName = prompt("Enter your name to book this slot:");
+            if (parentName) {
+                bookedSlots[time] = parentName;
+                element.classList.add("booked");
+                element.textContent = `${time} - ${parentName}`;
+                element.onclick = null;
             }
         }
-
-        function formatTime(date) {
-            let hours = date.getHours();
-            let minutes = date.getMinutes();
-            let ampm = hours >= 12 ? 'PM' : 'AM';
-            hours = hours % 12 || 12;
-            minutes = minutes < 10 ? '0' + minutes : minutes;
-            return hours + ":" + minutes + " " + ampm;
-        }
-
-        generateSchedule();
+        
+        generateSlots();
     </script>
 </body>
 </html>
